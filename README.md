@@ -22,7 +22,7 @@ this:
     end
 
 if you run it with `ruby hello.rb` and head to
-[localhost:4567](localhost:4567), you get the rewarding "Hello World".
+[localhost:4567](http://localhost:4567), you get the rewarding "Hello World".
 
 But you wouldn't call that a web application yet. In the first step, let us
 figure out, how to write html. If we were really hardcore, we could just write
@@ -137,7 +137,7 @@ This form gives a single text field, that is sent back under the name of
 `:greetee` and `POST`s it to the "/greet" URL. As you can see, it is very
 straight forward what is happening.
 
-Now, when you run it and go to the [localhost:4567](localhost:4567), you get a
+Now, when you run it and go to the [localhost:4567](http://localhost:4567), you get a
 form, and if you enter "Tim" into the form field, the greeting will be "Hello
 Tim" instead of "Hello World".
 
