@@ -75,19 +75,6 @@ code to a separate file:
 Sinatra will look for the "views" folder and find the matching file.
 
 Now we can start adding some actual fuctionality to it: The Hello World is a
-bit unpersonal, so lets add 
-
-    require 'rubygems'
-    require 'sinatra'
-    require 'haml'
-    
-    get "/" do
-      haml :hello3
-    end
-
-Sinatra will look for the "views" folder and find the matching file.
-
-Now we can start adding some actual fuctionality to it: The Hello World is a
 bit unpersonal, so lets add that: First of all, we need a form, in which we
 ask the user for their name and then direct to a page in which displays the
 Hello User page.
