@@ -76,6 +76,7 @@ Sinatra will look for the "views" folder and find the matching file.
 
 Now we can start adding some actual fuctionality to it: The Hello World is a
 bit unpersonal, so lets add 
+
     require 'rubygems'
     require 'sinatra'
     require 'haml'
