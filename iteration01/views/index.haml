@@ -1,5 +1,7 @@
 - content_for :title do
   Main
 %form(action = "/greet" method='POST')
-  %input(type='text' name='greeter' value="world")
+  %label 
+    Name:
+    %input(type='text' name='greetee' value="world")
   %input(type='submit')
