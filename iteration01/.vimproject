@@ -1,9 +1,0 @@
-Story="/home/aaron/Projects/SinatraStory/" filter="*.rb Gemfile" {
- index.rb
- Gemfile
- views=views filter="**/*.haml" {
-  index.haml
-  greet.haml
-  layout.haml
- }
-}
