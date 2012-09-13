@@ -72,11 +72,13 @@ Ok, that's a bit to digest:
 * The shift operator adds the element to the list.
 * The postfix `unless` (or `if`) is an idiomatic way to write one-line
 	conditional statements. It is equivalent to 
+
   ```ruby
     unless @@texts.include? self
       @@texts << self
     end
   ```
+
   but is much more readable.
 * `include?` is a valid method name and indeed idiomatic for predicates
 	(methods, that return true or false). Again, you don't need to write the
