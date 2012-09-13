@@ -129,7 +129,7 @@ end
 and add a lookup:
 
 ```ruby
-  def self.get id
+  def self.by_id id
     @@texts.detect {|txt| txt.id == id}
   end
 ```
@@ -143,3 +143,94 @@ and add a lookup:
   - `inject`: ... Lets not get into [that][fold].
 
 [fold]: <http://en.wikipedia.org/wiki/Fold_(higher-order_function)>
+
+This is all there is to do for the model part.
+
+Now we can present that with Sinatra, we need to require the models file as
+well and pass the variables.
+
+```ruby
+require 'rubygems'
+require 'sinatra'
+require './models.rb'
+
+get "/" do
+  haml :index, :locals => {:texts => Text.all}
+end
+
+get "/text/:id" do
+	text = Text.by_id(params[:id].to_i)
+  
+  return 404 if text.nil?
+
+  haml :show, :locals => {:text => text}
+end
+```
+
+* Note that I converted the parameter `id` to an integer before handing it to
+	the ```#by_id``` method.
+* I can return the 'not found' code 404 directly, if... well... I didn't find
+	the text with the id.
+* We can extract parameters from a `get` request (or any request really), by
+	marking the variable with a colon (like a symbol).
+
+Finally, we can display all that with two haml files:
+
+```haml # index.haml
+%ul
+  - for text in texts
+    %li
+      %a( href="/text/#{text.id}" )= text.title
+```
+
+This displays links to all texts in an unsorted list showing their title.
+
+* In a ruby string, you can put a ruby expression between `#{` and `}`, and it
+	will insert the value into the string.
+* In HAML, you can define attributes of a block (in this example `a`) by
+	putting them in parens. The right hand side of the equal signs are ruby
+  expressions.
+
+Finally, we need to add a file to show a single text:
+
+```haml # show.haml
+%h1
+  = text.title
+%div
+  :markdown
+    #{text.text}
+```
+
+* In HAML, when we prepose a paragraph with a filter name, like `markdown`,
+	then that is processed through that. Note however, that prefixing something
+  with `=` does no longer insert it.
+
+Of course, if we run that program, it will not show anything, in lack of any
+texts and also a way to add them. For the moment, we can fix that by adding a
+_fixture_ to the controller file:
+
+```ruby
+require 'rubygems'
+require 'sinatra'
+require 'rdiscount'
+require './models.rb'
+
+Text.new("Humpty Dumpty", "Humpty Dumpty sat on the wall...").save
+
+get "/" do
+  haml :index, :locals => {:texts => Text.all}
+end
+
+get "/text/:id" do
+	text = Text.by_id(params[:id].to_i)
+
+	return 404 if text.nil?
+
+  haml :show, :locals => {:text => text}
+end
+```
+
+* Ruby objects are initialized by the `#new` method of the class, which in
+	turn runs the `#initialize` method of the new object.
+* There is no magic "fixture" file, the fixture is just some code that adds
+	objects to the collection.
