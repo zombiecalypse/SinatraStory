@@ -1,0 +1,145 @@
+The Story of how I built a Model
+================================
+
+So in this text, I will actually build a very simple Webapp including data
+that is stored on the server. I will not use a database, so as not to
+complicate things. 
+
+The project is the following: I like to write stories in my free time, but
+with my notes all over time and space (I don't know, where they're
+getting lost), it gets quite annoying. Also the notes are completely
+disorganized, but that we will fix later.
+
+So the idea is to have a web application that stores my stories. For now, lets
+assume, that the stories only have a title and a body.
+
+In ruby, classes don't need no stupid type declarations, you just call it
+`@variablename` and the '@' tells us that it has instance scope and the
+variable can hold a string, a number, or any object. Similarily
+`@@classvariable` has class scope. The first, we won't even see, because Ruby
+can define getters and setters automatically with the `attr_accessor`
+function, to which you give _symbols_ - strings that signify a name. The
+minimal class, that has a publicly accessable text and title is
+
+```ruby
+class Text
+  attr_accessor :text, :title
+end
+```
+
+But we want a constructor, which is called `initialize` in ruby and some
+management of all the entities, e.g. displaying all Texts.
+
+The constructor only passes the arguments to the setters:
+
+```ruby
+class Text
+  attr_accessor :text, :title
+
+  def initialize( title, text )
+    self.text  = text
+    self.title = title
+  end
+  
+  # ...
+end
+```
+
+`def` defines methods (or functions) in the current scope and `self` is
+*always* bound to the current object.
+
+Now we need a class scoped set of all the Texts, preferably only the ones we
+save (think of tests, where we generate Texts that should not appear in the
+set).
+
+```ruby
+class Text
+  # ...
+  @@texts = []
+  
+  def save
+    @@texts << self unless @@texts.include? self
+  end
+end
+```
+
+Ok, that's a bit to digest:
+
+* `@@texts = []` initializes the class scoped variable with an empty list
+	literal.
+* `save` does not take any arguments, we don't need to write the parens in
+	method declarations.
+* The shift operator adds the element to the list.
+* The postfix `unless` (or `if`) is an idiomatic way to write one-line
+	conditional statements. It is equivalent to 
+  ```ruby
+    unless @@texts.include? self
+      @@texts << self
+    end
+  ```
+  but is much more readable.
+* `include?` is a valid method name and indeed idiomatic for predicates
+	(methods, that return true or false). Again, you don't need to write the
+  parens on the method calls (fun fact: attr_accessor is a method too).
+
+That said, the delete method should be simple
+
+```ruby
+class Text
+  # ...
+  def delete
+    @@texts.delete self
+  end
+  
+  def self.all
+    @@texts
+  end
+end
+```
+
+but the `all` method needs some explaining again:
+
+* Remember how `self` is *always* bound to the current object? In the body of
+	a class, that object is the class you're currently defining! That's why
+  `def self.all` defines the method `all` in the class, not the instances.
+
+Finally, lets add a unique identifier with what we have learned:
+
+```ruby
+class Text
+  attr_accessor :text, :title
+  
+  @@text_count = 0
+  
+  def initialize( title, text )
+    self.title = title
+    self.text = text
+    @id = @@text_count
+    @@text_count += 1
+  end
+  
+  def id
+    @id
+  end
+
+  # ...
+end
+```
+
+and add a lookup:
+
+```ruby
+  def self.get id
+    @@texts.detect {|txt| txt.id == id}
+  end
+```
+
+* The `detect` method takes a block, that is an executable part of code. This
+	block is evaluated and the method returns the first element, for which the
+  block returns `true`. In the same fashion, there are
+  - `select`: returns a list of all the elements, for which the block is true.
+  - `collect`: returns a list of all the return values for the block executed
+    on the elements
+  - `inject`: ... Lets not get into [that][fold].
+
+[fold]: http://en.wikipedia.org/wiki/Fold_(higher-order_function).
