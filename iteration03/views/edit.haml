@@ -1,0 +1,4 @@
+%h1 
+  Edit
+  %q= @text.title
+= haml :form, :locals => {:title => @text.title, :text => @text.text, :actionurl => "/text/#{@text.id}"}
