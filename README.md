@@ -41,7 +41,7 @@ end
 ```
 
 but who does that? Nobody, that's who! Well, at least not a software aesthete
-as myself. I personally prefer [HAML](haml.info), which translates directly
+as myself. I personally prefer [HAML](http://haml.info), which translates directly
 into HTML, but removes all the boilerplate. Fortunately, it is really easy to
 use with Sinatra:
 
