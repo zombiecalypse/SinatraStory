@@ -176,7 +176,8 @@ end
 
 Finally, we can display all that with two haml files:
 
-```haml # index.haml
+```haml 
+# index.haml
 %ul
   - for text in texts
     %li
@@ -193,7 +194,8 @@ This displays links to all texts in an unsorted list showing their title.
 
 Finally, we need to add a file to show a single text:
 
-```haml # show.haml
+```haml 
+# show.haml
 %h1
   = text.title
 %div
