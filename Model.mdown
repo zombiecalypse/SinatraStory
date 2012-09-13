@@ -236,3 +236,11 @@ end
 	turn runs the `#initialize` method of the new object.
 * There is no magic "fixture" file, the fixture is just some code that adds
 	objects to the collection.
+
+That concludes this. We can now build a simple model and know how to build a
+in-memory database. The rest should be a breeze, right?
+
+Next time, I'll show you, how to make the application understand request like
+"add this text" and "this text sucks, change it" and also "this text sucks so
+much, forget it ever existed". You will see, that the designers of the HTTP
+protocol had something like that in mind.
