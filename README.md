@@ -146,5 +146,5 @@ Now, when you run it and go to the [localhost:4567](http://localhost:4567), you 
 form, and if you enter "Tim" into the form field, the greeting will be "Hello
 Tim" instead of "Hello World".
 
-That is enough for the first iteration, the next time, I'll show you, how you
+That is enough for the first iteration, the [next time](./Model.mdown), I'll show you, how you
 can use a model too. Hint: It is just plain ruby.
