@@ -142,4 +142,4 @@ and add a lookup:
     on the elements
   - `inject`: ... Lets not get into [that][fold].
 
-[fold]: http://en.wikipedia.org/wiki/Fold_(higher-order_function).
+[fold]: <http://en.wikipedia.org/wiki/Fold_(higher-order_function)>
