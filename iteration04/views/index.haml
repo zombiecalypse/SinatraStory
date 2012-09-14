@@ -3,5 +3,8 @@
 %ul
   - for text in texts
     %li
+      %em= text.user.name
+      \:
       %a( href="/text/#{text.id}" )= text.title
-%a( href="/text/new" ) new text
+- if @user
+  %a( href="/text/new" ) new text

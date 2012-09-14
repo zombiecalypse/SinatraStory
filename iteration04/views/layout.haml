@@ -1,10 +1,26 @@
+!!! 5
 %head
   %title
     Awesome - 
     = yield_content :title
 %body
   %aside
-    %ul
-      %li 
-        %a(href = "/") home
+    #user
+      - if @user
+        %b= @user.name
+        %a(href = "/logout") logout
+      - else
+        %form(action="/login" method="POST")
+          %label
+            Username
+            %input(type="text" name="username") 
+          %label
+            Password
+            %input(type="password" name="password")
+          %input(type="submit" value="login")
+        %a( href="/signup" ) Sign up
+    %nav
+      %ul
+        %li 
+          %a(href = "/") home
   %article= yield

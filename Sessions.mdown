@@ -1,0 +1,330 @@
+# User Sessions and Layouts
+
+The SinatraStory project now has a single model class, that is very simple and
+allows everybody that can connect to the server to create and delete
+everything. It seemed like a good idea at the time, but now it seems like an
+even better idea would be to restrict access on a user basis. A user should
+only be able to edit and delete their own texts.
+
+This implementation is blatantly ripped off [Authentication with Sinatra](http://www.128bitstudios.com/2011/11/21/authentication-with-sinatra/).
+
+First of all, we need a model for the user. Lets ignore the relation between
+the user and the texts for the moment and focus on the login procedure. We
+want the ability to sign up, to log in, and to log out. For this, we need some
+new routes:
+
+```ruby
+get "/signup" do
+  haml :signup
+end
+
+post "/signup" do
+  # ... Create user ...
+end
+
+post "/login" do
+  # ... Set current user ...
+end
+
+get "/logout" do
+  # ... reset current user ...
+end
+```
+
+Now the thing is, to save a login, we need something called a _session_. A
+session is a piece of information stored on the server that relates to the
+user, as such the user can not edit it. You might notice, that this is in
+conflict to the REST principles, but still commonly done. To acknowledge that
+this is not pure, we need to enable it:
+
+```ruby
+# controller.rb
+
+# ...
+
+enable :sessions
+
+# ...
+```
+
+Next we can imagine how a login and logout procedures would look like:
+
+```ruby
+post "/login" do
+  fail "No such login" unless User.login(params[:username], params[:password]) 
+  
+  session[:username] = params[:username]
+  
+  redirect back
+end
+
+get "/logout" do
+  session[:username] = nil
+  redirect back
+end
+```
+
+* Failing is an option and gives an error page.
+* The session looks like a dictionary.
+* You can redirect to the last page visited.
+* We store only the username in the session, because it takes
+  less space.
+
+Similiarly, on signup you should create an account if the name is available.
+Normally, we should also send the password twice, if the user misstyped.
+
+```ruby
+post "/signup" do
+  username, pw, pw2 = params[:username], params[:password], params[:password2]
+  
+  fail "Passwords not identical" if pw != pw2
+  
+  fail "User name not available" unless User.available? username
+  
+  User.new(username, pw).save
+  
+  session[:username] = username
+  redirect "/"
+end
+```
+
+The HAML file for this is left up as an exercise to the reader.
+
+Now it would be nice to have a layout around every of our pages that could
+include the login. Unfortunately, that's not how it works, we need to edit it
+into every view file separately....
+
+Just kidding. There is the `layout.haml` file, which is rendered around every
+HAML file (partials not included). You can decide, where to put the inner page
+by placing `= yield` at the respective point. 
+
+This of course assumes, that there is exactly one point, which is filled in -
+not very realistic: Typically, depending on the page, you would display
+another page title or a slightly different sidebar. Sure, you could configure
+it in the controller, but that would be awkward. Fortunately, there is a gem
+that does that called `sinatra-outputbuffer` - accept no substitutes!
+Seriously, I tried 3 gems that offered this and that was the only one that
+seemed to work. If you `require 'sinatra/outputbuffer'` it, you can use the
+commands ```content_for :some_name``` to fill a part and 
+```yield_content :some_name``` to leave the gap open to be filled in.
+
+With this, we can write a layout file:
+
+```haml
+!!! 5
+%head
+  %title
+    SinatraStory - 
+    = yield_content :title
+%body
+  %aside
+    #user
+      - if @user
+        %b= @user.name
+        %a(href = "/logout") logout
+      - else
+        %form(action="/login" method="POST")
+          %label
+            Username
+            %input(type="text" name="username") 
+          %label
+            Password
+            %input(type="password" name="password")
+          %input(type="submit" value="login")
+        %a( href="/signup" ) Sign up
+  %article= yield
+```
+
+* `!!! 5` means it is converted to HTML 5.
+* The title is set to "SinatraStory - <subpage title>"
+* If `@user` is not nil, show the name and a logout link.
+* If it is, show the signup link and a login field.
+* Insert the bulk of the inner page into an `<article>`.
+
+Now there's the user information on every page!
+
+Or it were, if there was a `User` class.
+
+At the moment that class should store the user name and the password
+information. Hopefully, the recent news about all kind of password leaks
+made you cautious enough never to store any passwords in plain text into a
+database. *Never, ever store a password in plain text!* Yes, this is a toy
+project, but if anybody copied this, it should at least be somewhat secure.
+Always store passwords using a [hash function](http://en.wikipedia.org/wiki/Hash_function).
+
+In the following I will use BCrypt, not because it is fast, but because it is
+slow. A slow hash function ensures, that a brute force cracking attempt with a
+known hash takes long enough.
+
+Anyway, include the `bcrypt-ruby` gem and `require 'bcrypt'` in your
+`models.rb` file. We don't want anyone to touch any of the attributes, so they
+are read only. Besides the hash, we also generate a salt (a random value
+basically).
+
+```ruby
+class User
+  attr_reader :name, :password_hash, :password_salt
+
+  @@users = {} # We store the users in a dictionary by user name.
+
+  def self.all
+    @@users
+  end
+  
+  def self.by_name name
+    @@users[name]
+  end
+  
+  def self.available? name
+    not @@users.has_key? name
+  end
+  
+  def save
+    raise "Duplicated user" if @@users.has_key? name and @@users[name] != self
+
+    @@users[name] = self
+  end
+  
+  # ...
+end
+```
+
+* This is similar to the Text class and should only be a problem in that it
+	uses a dictionary instead of a list.
+
+However, it does not address the `initialize(name, password)` and the
+`User.login(name, password)` methods.
+
+These should use the hash function, so I show you how separately. On user
+creation, we will take the password and generate a hash for it and only store
+that in the model. When we `login`, we check that the passwords hash is the
+same as the stored hash. Additionally, we add a random salt, so that two users
+with the same password still have different hashes.
+
+```ruby
+def initialize(name, password)
+  pw_salt = BCrypt::Engine.generate_salt
+  pw_hash = BCrypt::Engine.hash_secret(password, pw_salt)
+  @name = name
+  @password_hash = pw_hash
+  @password_salt = pw_salt
+end
+
+def self.login name, password
+  user = @@users[name]
+  
+  return false if user.nil?
+  
+  user.password_hash == BCrypt::Engine.hash_secret(password, user.password_salt)
+end
+```
+
+This way, even if your database was compromised and leaked, the users would be
+relatively save.
+
+
+That was the complicated part, the rest will not give anyone headaches. What
+remains is to ensure, that texts are owned by someone and that only that
+someone can edit them. Obviously we need to extend the `Text` class to have a
+`User` it belongs to:
+
+```ruby
+# models.rb
+class Text
+  # ...
+  attr_reader :user
+  
+  def initialize( title, text, user )
+    # ...
+    @user = user
+  end
+
+  def editable? user
+    @user == user
+  end
+end
+```
+
+and the `User` to contain the texts:
+
+```ruby
+# models.rb
+class User
+  def initialize(...)
+    @texts = {}
+    # ...
+  end
+  
+  def texts
+    @texts.dup # use copy
+  end
+
+  def add_text( title, text )
+    new_text = Text.new(title, text, self)
+    @texts[new_text.id] = new_text
+    new_text
+  end
+
+  def remove_text( id )
+    deleted = @texts.delete(id)
+  end
+end
+```
+
+The controller should check if the action is allowed. We'll use the current
+user (not the current user name) a lot, so it makes sense to fetch it before
+anything else happens:
+
+```ruby
+# controller.rb
+
+before do
+  @user = User.by_name session[:username]
+end
+```
+
+Now the controller needs to ensure, that a user might only do allowed
+operations:
+
+```ruby
+post "/text/:id" do
+	text = Text.by_id(params[:id].to_i)
+  
+	return 404 if text.nil?
+	return 401 unless text.editable? @user
+
+  text.title, text.text = params[:title], params[:text]
+
+	redirect to("/text/#{text.id}")
+end
+```
+
+and for creation the same. Finally, we can wrap 
+
+```haml
+- if text.editable? @user
+  %ul
+    %li
+      %a(href="/text/#{text.id}/edit") edit
+    %li
+      %form(action="/text/#{text.id}" method="POST")
+        %input(name ="_method" type="hidden" value="delete")
+        %input(type="submit" value="delete")
+```
+
+and similarly for the "new text" link.
+
+This adds some security to our page. You could now add a per user listing, a
+profile for each user, ... but you could do that with what you already know.
+Try it!
+
+
+You should now know:
+
+* What a session is and how to use it.
+* How to use the `layout.haml` file
+* How to use `yield_content` and `content_for`
+* That you should *never* store plain text passwords and how to use a hash
+	function with salt.
+* How to make relations between model classes.
+* Ensure that restricted operations are executed only with the valid user.
