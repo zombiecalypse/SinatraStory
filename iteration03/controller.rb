@@ -12,7 +12,7 @@ get "/text/new" do
 	haml :new
 end
 
-get "text/:id/edit" do
+get "/text/:id/edit" do
 	@text = Text.by_id(params[:id].to_i)
 
 	haml :edit

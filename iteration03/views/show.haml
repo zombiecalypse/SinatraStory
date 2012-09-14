@@ -5,7 +5,7 @@
     #{text.text}
 %ul
   %li
-    %a(href="/text/#{text.id}") edit
+    %a(href="/text/#{text.id}/edit") edit
   %li
     %form(action="/text/#{text.id}" method="POST")
       %input(name ="_method" type="hidden" value="delete")
