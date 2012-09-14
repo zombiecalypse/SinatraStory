@@ -1,0 +1,12 @@
+%h1
+  = text.title
+%div
+  :markdown
+    #{text.text}
+%ul
+  %li
+    %a(href="/text/#{text.id}") edit
+  %li
+    %form(action="/text/#{text.id}" method="POST")
+      %input(name ="_method" type="hidden" value="delete")
+      %input(type="submit" value="delete")

@@ -1,0 +1,7 @@
+- content_for :title do
+  Texts
+%ul
+  - for text in texts
+    %li
+      %a( href="/text/#{text.id}" )= text.title
+%a( href="/text/new" ) new text
