@@ -9,7 +9,7 @@ As you might know, the HTTP has four main verbs:
 
 * _GET_: A content is shown, no modification should occur.
 * _POST_: Modify a content by sending the server information.
-* _PUT_: Create new content on the server
+* _PUT_: Create new content on the server by URL
 * _DELETE_: What do you think?
 
 There are some others, but these four help you design your interface. For
@@ -34,7 +34,7 @@ URLs yourself. The last time, we defined the two `GET` methods, so lets add
 publishing a new text first:
 
 ```ruby
-put "/text" do
+post "/text" do
   text = Text.new(params[:title], params[:text])
   text.save
 end
@@ -57,7 +57,7 @@ end
 
 This mixes the two sources for `params`.
 
-```
+```ruby
 delete "/text/:id" do
 	text = Text.by_id(params[:id].to_i)
   
@@ -80,7 +80,6 @@ from both `new.haml` and `edit.haml`.
 # form.haml
 
 %form(action = actionurl method = "POST")
-  %input(type='hidden' name="_method" value="put")
   %label
     Title:
     %input(type='text' name="title" value="#{title}")
@@ -102,16 +101,6 @@ from both `new.haml` and `edit.haml`.
 = haml :form, :locals => {:title =>  "", :text => "", :actionurl => "/text"}
 ```
 
-You might be wondering, what the heck the line 
-
-```haml
-%input(type='hidden' name="_method" value="put")
-```
-
-is about. Fun fact: Browsers can't use `PUT` or `DELETE`. It's embarrassing
-but true. The fix is the following: We sent a `POST`, which tells the server
-that it actually should have been a `PUT` method. Sinatra understands this and
-translates.
 
 We need to add URLs for the form of course, for example 
 
@@ -154,8 +143,17 @@ There is only putting the respective links into the views:
       %input(type="submit" value="delete")
 ```
 
-* Note: The editing is straight forward, but the "delete" option again has a the
-	hidden input, that tells Sinatra, that it is a `DELETE` call.
+You might be wondering, what the heck the line 
+
+```%input(name ="_method" type="hidden" value="delete")```
+
+is about. Fun fact: Browsers can't use `PUT` or `DELETE`. It's embarrassing
+but true. The fix is the following: We sent a `POST`, which tells the server
+that it actually should have been a `DELETE` method. Sinatra understands this and
+translates.
+
+Please don't let `GET` requests change anything on the server, or a google
+spider might delete all your posts.
 
 You should now know
 
