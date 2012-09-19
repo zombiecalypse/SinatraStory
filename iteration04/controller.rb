@@ -71,9 +71,9 @@ end
 post "/signup" do
 				username, pw, pw2 = params[:username], params[:password], params[:password2]
 
-				fail "Passwords not identical" if pw != pw2
+				halt "Passwords not identical" if pw != pw2
 				
-				fail "User name not available" unless User.available? username
+				halt "User name not available" unless User.available? username
 
 				User.new(username, pw).save
 
@@ -82,7 +82,7 @@ post "/signup" do
 end
 
 post "/login" do
-				fail "No such login" unless User.login params[:username], params[:password]
+				halt 401, "No such login" unless User.login params[:username], params[:password]
 
 				session[:username] = params[:username]
 
