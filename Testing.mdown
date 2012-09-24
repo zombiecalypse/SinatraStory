@@ -26,6 +26,10 @@ language. First you say, what you test, then -- if you want -- you define
 different contexts in which the thing you test can be, and finally, you say
 what `it` should be able to do.
 
+However `rspec` is a separate executable from `ruby`, so before you do this,
+you should `gem install rspec` and when you're done, execute the tests with
+```rspec <file>```.
+
 Lets start with unit-testing, so stick to one class for as long as you can.
 For a User e.g. "Tom", we know that
 
