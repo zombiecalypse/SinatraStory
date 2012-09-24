@@ -1,0 +1,175 @@
+# Testing
+
+Up to this point, I always felt kinda bad, because I always had to start up the
+server and go through all the pages in order to catch errors (there always are).
+The solution to that is of course to automate that. Since I don't have a
+clicking robot, I'll fake this by sending requests directly. This is possible
+by the `rack` testing library. Also I will use the `rspec` testing library,
+because it doubles as documentation, and provides the very handy `should`
+method.
+
+For structure, we use a different file, e.g. `tests.rb`:
+
+```ruby
+def relative(path)
+  File.join(File.dirname(__FILE__), path)
+end
+
+require relative('controller.rb')
+
+require 'rack/test'
+include Rack::Test::Methods
+```
+
+Now the nice thing about `rspec` is that it looks very much like natural
+language. First you say, what you test, then -- if you want -- you define
+different contexts in which the thing you test can be, and finally, you say
+what `it` should be able to do.
+
+Lets start with unit-testing, so stick to one class for as long as you can.
+For a User e.g. "Tom", we know that
+
+* it can create texts
+* it can be found by name
+* it can remove texts by their id
+
+Further, the database
+
+* can tell if a user can login
+* can list all users
+
+And this is the structure of our test: 
+
+```ruby
+describe User do
+  context "Tom" do
+    it "can create texts" do
+			...
+    end
+
+    it "can be found by his name" do
+			...
+    end
+
+    it "can remove texts by id" do
+			...
+    end
+  end
+
+  context "Database" do
+    it "can tell if a user can login" do
+			...
+    end
+
+    it "can list all users" do
+			...
+    end
+  end
+end
+```
+
+Usually, we also want to create some conditions before the tests are run, for
+example creating some users, ... We can do this with the `before` method which
+comes in two flavours: `before(:all)`, which is executed before any of the
+tests run, and `before(:each)`, which runs before each of the test methods.
+
+For example, to set up the user "Tom", we can add this to the `context "Tom"`
+block.
+
+```ruby
+    before(:all) do
+      User.reset
+      Text.reset
+      @tom = User.new "Tom", "abc"
+      @tom.save
+    end
+```
+
+* We clear the whole database and then add `@tom` and save him.
+* Similarly you can define an `after(:each)` or `after(:all)` call.
+
+Now to implement `it "can create texts"`, we can assume, that this `@tom` is
+given:
+
+```ruby 
+    it "can create texts" do
+      text = @tom.add_text("Humpty", "Dumpty")
+      text.user.should eq(@tom)
+      @tom.texts.should eq([text])
+    end
+```
+
+* every object has a `#should` method, that accepts matchers (you can look
+	them up [here](http://rubydoc.info/gems/rspec-expectations/2.4.0/RSpec/Matchers).).
+  You probably need `eq(...)` most often.
+* You can invert the test by the ```#should_not``` method.
+
+To describe the Server's abilities, we notice, that there is no class that we
+describe. But `rspec` is forgiving and allows you to describe something by a
+string name:
+
+```ruby
+describe "Server" do
+  context "for unregistered users" do
+    it "lists all text titles under /text" { }
+
+    it "can show the full text under /text/:id" { }
+  end
+
+  context "for registered users" do
+    it "accepts posts to /text as new text" { }
+
+    it "deletes posts on /text/:id" { }
+
+    it "updates posts on POST /text/:id" { }
+  end
+end
+```
+
+`rack/test` has not been included for nothing, it offers functions `get`,
+`post`, ... that do requests to the localhost. To start the server, we need to
+define an `app` method, which is then started before the tests run. At the
+moment, we don't have a class for that, but we can provide the standard
+Sinatra app.
+
+```ruby
+describe "Server" do
+  def app
+    Sinatra::Application
+  end
+  ...
+end
+```
+
+A test could now look like this:
+
+```ruby
+    it "lists all text titles under /text" do
+      get "/text"
+      last_response.body.should include("Humpty")
+      last_response.body.should_not include("Dumpty")
+    end
+```
+
+* `get ...` sends a get request to the server and saves the response.
+* ```last_response``` can then be used to extract information about the
+	answer, for example, if the text of the response contains something.
+
+Now to the parametrized requests:
+
+```ruby
+    it "accepts posts to /text as new text" do
+      post "/text", :title => "The Cat", :text => "The cat sat on the mat"
+
+      last_response.status.should == 302
+      Text.all.collect(&:title).should include("The Cat")
+    end
+```
+
+* You just add the parameters of the request as named parameters of the query. 
+* You can test the response code of the query.
+* You can be very concise in ruby. Basically, the last line says "'The Cat'
+	should be among the titles of texts".
+
+With these building blocks, you probably can figure out 90% of your testing
+needs.
