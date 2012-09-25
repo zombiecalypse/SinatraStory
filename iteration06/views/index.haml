@@ -1,0 +1,10 @@
+- content_for :title do
+  Texts
+%ul
+  - for text in texts
+    %li
+      %em= text.user.name
+      \:
+      %a( href="/text/#{text.id}" )= text.title
+- if user
+  %a( href="/text/new" ) new text

@@ -1,0 +1,216 @@
+# Modularity
+
+Look at [the code of the last iteration](https://github.com/zombiecalypse/SinatraStory/tree/master/iteration05).
+
+Up to this point, we just threw new classes, new models, new tests, and new
+routes into a few files. This works for small projects, but in a team it is
+*very* problematic if everybody works on the same files. So lets change that!
+
+One file should solve one problem. Usually that means that there is exactly one
+class in it, but with routes, it could look a bit different.
+
+We notice some changes, that we could do:
+
+* Split the `models.rb` file into a `text.rb` and an `user.rb`
+* Split the `controller.rb` into an `authentication.rb` and a
+  `text_controller.rb`.
+* Split the `tests.rb` into `user_test.rb` and `server_test.rb`.
+
+This seems simple enough and it turns out, aside from the second point, it
+really is.
+
+## Model
+So lets first take the model:
+
+```ruby
+# models.rb
+require 'rubygems'
+require 'bcrypt'
+
+class Text
+  ...
+end
+
+class User
+  ...
+end
+```
+
+So we can split this up into:
+
+```ruby
+# app/models/text.rb
+module Models
+  class Text
+    ...
+  end
+end
+```
+
+```ruby
+# app/models/user.rb
+require 'rubygems'
+require 'bcrypt'
+
+module Models
+  class User
+    ...
+  end
+end
+```
+
+* You can define name spaces with `module`. You could also add another name
+  space with your application name.
+
+Now instead of including `models`, we would include `app/models/user.rb` or
+`app/models/text.rb`. Because of the name space, we would need to access the
+classes via `Models::User`, which is very cumbersome, so we `include` the
+`Models` name space into the active one to get that out of the way.
+
+## Tests
+We had one test file, that included everything from everywhere. We can transform
+
+```ruby
+# tests.rb
+def relative(path) { ... }
+
+# includes all models:
+  require relative('controller.rb')
+
+# only used by server test:
+  require 'rack/test'
+
+  include Rack::Test::Methods
+
+describe User do
+  ...
+end
+
+describe "Server" do
+  ...
+end
+```
+
+can be transformed into
+
+```ruby
+# user_test.rb
+def relative(path) { ... }
+
+# explicit about includes:
+  require relative('../app/model/user.rb')
+  require relative('../app/model/text.rb')
+
+# include module
+  include Models
+
+describe User do
+  ...
+end
+
+# server_test.rb
+def relative(path) { ... }
+
+# This time, we need the text controller:
+  require relative('../app/controller/text_controller.rb')
+
+require 'rack/test'
+
+include Rack::Test::Methods
+include Controllers
+
+describe "Server" do
+  ...
+end
+``` 
+
+## Controllers
+
+This is actually a bit more difficult. If you looked at the 
+[Sinatra documentation](http://www.sinatrarb.com/documentation), there are two
+ways of doing things: The classic approach, that we took before and the modular.
+With the modular approach, we define modules (actually classes) for controllers
+and can then plug them together.
+
+First of all, the `require 'sinatra'` has to go, it sets up everything for a
+classic application, something we explicitly don't want it to do.  Instead, we
+define controller classes, that inherit from `Sinatra::Base` in the
+`sinatra/base` file. But surely, we need some configuration constants, like
+for example the location of the `views` folder. For this, place the following
+in the root directory and include it in every file:
+
+```ruby
+# config.rb
+...
+Views = relative('views')
+```
+
+Fortunately the `get`, `post`, and `delete` definitions are relatively easy to
+take appart into the different classes, so we can define
+
+```ruby
+module Controllers
+  class Authentication < Sinatra::Base
+    module Helpers
+      def user
+        @user
+      end
+    end
+
+    helpers Sinatra::ContentFor
+    helpers Helpers
+    set :views, Views
+    ...
+
+
+  end
+end
+```
+
+* You typically need to include the helper methods of extensions with
+  `helpers`. The argument must be a module, not a class.
+* The `views` folder must be set manually. If this bothers you, you can write
+  a minimal subclass of `Sinatra::Base` that does exactly this and subclass
+  every of your controllers from that.
+* The `@user` variable is not visible from outside this class, but the
+  `#user` method can be used. It must be packed into a module, that can later
+  be included via `helpers`.
+
+The `TextController` will use some things of the Authentication controller,
+namely the `user`. Be sure to include the `authentication.rb` and then declare
+the `Authentication` helpers.
+
+```ruby
+# text_controller.rb
+
+class TextController < Sinatra::Base
+  helpers Sinatra::ContentFor
+  helpers Authentication::Helpers
+  set :views, Views
+  ...
+end
+```
+
+Finally, you need to edit all the views and replace `@user` with `user`.
+
+In the `main.rb` file at the root of your directory, you need to include all
+controllers and define a main application which uses the other classes.
+Finally, you run that class.
+
+```ruby
+class Main < Sinatra::Base
+  enable :sessions
+  set :views, Views
+  use Controllers::Authentication
+  use Controllers::TextController
+
+  get("/") { redirect to("/text") }
+end
+
+Main.run!
+```
+
+Try it, fix the errors, repeat, but this should allow you to make modular
+Sinatra applications. You should also consider to move views for different
+controllers into different folders, you can do that with `:'path/to/view'` in
+the controller. Have fun!
