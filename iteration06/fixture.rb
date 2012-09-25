@@ -1,3 +1,6 @@
+def relative path
+  File.join(File.expand_path(File.dirname(__FILE__)), path)
+end
 require relative('app/models/user.rb')
 require relative('app/models/text.rb')
 

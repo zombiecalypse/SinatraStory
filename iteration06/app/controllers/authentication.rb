@@ -1,14 +1,10 @@
-def relative(path)
-  File.join(File.dirname(__FILE__), path)
-end
-
 require 'rubygems'
 require 'sinatra/base'
 require 'haml'
 require 'sinatra/content_for'
 require 'rdiscount'
-require relative('../models/user')
-require relative('../../config.rb')
+require_relative('../models/user')
+require_relative('../../config.rb')
 
 include Models
 

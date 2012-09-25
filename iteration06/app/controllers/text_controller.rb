@@ -1,5 +1,5 @@
 def relative(path)
-  File.join(File.dirname(__FILE__), path)
+  File.join(File.expand_path(File.dirname(__FILE__)), path)
 end
 
 require 'rubygems'
@@ -7,10 +7,10 @@ require 'sinatra/base'
 require 'sinatra/content_for'
 require 'haml'
 require 'rdiscount'
-require relative('../models/user')
-require relative('../models/text')
-require relative('../../fixture.rb')
-require relative('authentication')
+require_relative('../models/user')
+require_relative('../models/text')
+require_relative('../../fixture.rb')
+require_relative('authentication')
 
 include Models
 module Controllers
