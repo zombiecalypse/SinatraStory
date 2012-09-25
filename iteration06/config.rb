@@ -1,4 +1,4 @@
 def relative(path)
   File.join(File.dirname(__FILE__), path)
 end
-Views = relative('views')
+Views = relative('app/views')
