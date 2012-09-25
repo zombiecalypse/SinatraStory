@@ -9,3 +9,4 @@ Instead of showing the first part here, here's a list of all parts:
 * [Updating and Deleting](https://github.com/zombiecalypse/SinatraStory/blob/master/REST.mdown)
 * [Adding Users](https://github.com/zombiecalypse/SinatraStory/blob/master/Sessions.mdown)
 * [Testing](https://github.com/zombiecalypse/SinatraStory/blob/master/Testing.mdown)
+* [Modularity](https://github.com/zombiecalypse/SinatraStory/blob/master/Modularity.mdown)
