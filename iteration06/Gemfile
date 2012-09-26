@@ -1,7 +1,7 @@
 source 'https://rubygems.org'
-gem 'sinatra'
-gem 'sinatra-outputbuffer'
-gem 'haml'
-gem 'bcrypt-ruby'
-gem 'require_relative'
-gem 'rdiscount'
+gem 'sinatra'            # The Framework
+gem 'sinatra-contrib'    # Useful additional features
+gem 'haml'               # The rendering engine
+gem 'bcrypt-ruby'        # Security, hashing
+gem 'require_relative'   # REALLY USEFUL
+gem 'rdiscount'          # Markdown support
