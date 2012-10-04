@@ -10,3 +10,4 @@ Instead of showing the first part here, here's a list of all parts:
 * [Adding Users](https://github.com/zombiecalypse/SinatraStory/blob/master/Sessions.mdown)
 * [Testing](https://github.com/zombiecalypse/SinatraStory/blob/master/Testing.mdown)
 * [Modularity](https://github.com/zombiecalypse/SinatraStory/blob/master/Modularity.mdown)
+* [File Handling](https://github.com/zombiecalypse/SinatraStory/blob/master/FileHandling.mdown)
