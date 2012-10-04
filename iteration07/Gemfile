@@ -1,0 +1,7 @@
+source 'https://rubygems.org'
+gem 'sinatra'
+gem 'sinatra-outputbuffer'
+gem 'haml'
+gem 'bcrypt-ruby'
+gem 'require_relative'
+gem 'rdiscount'

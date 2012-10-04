@@ -1,0 +1,145 @@
+# Handling Files
+
+This is not necessarily Sinatra or Ruby or HAML related, but the question of
+how to handle file upload pops up sooner or later.
+
+So our texts might profit from illustrations, that set the mood and act as
+the cover from which the texts will be judged. Brainstorming:
+
+1. Pictures should be optional.
+2. Pictures should be located on the hard disk of the server, so that Ruby
+   doesn't use up all the RAM.
+3. There should be a limit for the file size. Lets say `400kB`
+4. The image belongs to the text, therefore the texts are not the leaves of
+   our application. This implies, that we have URLs like `/text/1/` instead
+   of `/text/1`. Yeah, that kind of details sometimes are important.
+
+## Model
+By 2., we should not give a list of `File`s to the `Text`, but rather a list
+of file paths. 
+
+```ruby
+class Text
+  attr_reader :image_paths
+  ...
+  def initialize
+    ...
+    @image_paths = []
+  end
+end
+```
+
+## View
+As it turns out, 3. can not simply be checked on the client side (HTML5 +
+JavaScript can, but that's out of the scope of this text). However, 4.
+influences the View part: Files should be uploaded in the edit form for the
+texts, and since we use markdown in the texts, relative links should be
+possible with a simple
+
+```markdown
+![alt](image.jpg)
+```
+
+which tells us, that the controller urls should be something like
+`/text/:id/:img`.
+
+Lets add a form in the `edit.haml` to upload images.
+
+```haml
+...
+%h2 Upload
+%form(action = "/text/#{@text.id}/images" method = "POST" enctype="multipart/form-data")
+  %input(type='file' name="file_upload" accept="image/*")
+  %input(type='submit' value='upload')
+```
+
+* The form part should be familiar, except for the `enctype`.
+* `enctype` *must* be `multipart/form-data` for file upload.
+* There is an input type `file`, which lets the user choose a file from their
+  machine.
+* The `accept` option tells the browser, that the user should only choose
+  image files. This leads to the file-choosing dialog does only display those
+  files. They might still upload all kind of crap, but it's still useful for
+  users.
+* There is no standard way to tell the form about our 400kB size limit.
+
+## Controller
+The difficult part comes in the controller. On one hand, we need to implement
+an upload route and on the other hand a route that gives back the image.
+
+```ruby
+post "/text/:id/images" do
+  text = Text.by_id(params[:id].to_i)
+  return 404 unless text
+  return 401 unless text.editable? user
+  file = params[:file_upload]
+  ...
+end
+
+get "/text/:id/images/:pic" do
+  ...
+end
+```
+
+So the thing about files in sinatra is that you get a temporary file on your
+server, but also the original file name. The `file` variable in the route
+skeleton is a hash, that contains among other things a `:filename` and a
+`:tempfile`. 
+
+When we save the image to the disk, we want a consistent naming, that does not 
+let different texts images interfere with each other. To make that consistent,
+we define a helper function:
+
+```ruby
+def id_image_to_filename(id, path)
+  "#{id}_#{path}"
+end
+```
+
+The complete path on the disks might be `public/images/...` (doesn't really
+matter, people wont usually see this), create these folders.
+
+```ruby
+post "/text/:id/images" do
+  ...
+  file = params[:file_upload]
+  return 413 if file[:tempfile].size > 400*1024
+
+  filename = id_image_to_filename(text.id, file[:filename])
+
+  FileUtils::cp(file[:tempfile].path, File.join("public", "images", filename))
+
+  redirect to("/text/#{params[:id]}/")
+end
+```
+
+* `413` is the code for `Data sent to server is too large`.
+* `FileUtils` is a standard ruby module, which gives nice functions to deal
+  with files, for example to copy them.
+* The `:tempfile` is saved somewhere on the disk and `.path` tells us where.
+* `File.join(...)` interleaves the argument with the right separator for the
+  operating system (i.e. `\` on Windows and `/` on the other systems).
+
+The other route needs to access the same file and send it back:
+
+```ruby
+get "/text/:id/images/:pic" do
+  send_file(File.join("public","images", id_image_to_filename(params[:id], params[:pic])))
+end
+```
+
+* ```send_file``` takes a local file path and sends the file back.
+
+And that's it! Try uploading a file and accessing ```![alt](image/something.jpg)```.
+
+
+## Summary
+
+* ```<input type="file">``` gives a form field that uploads a file.
+  - You can add an expected file type with `accept="..."`, where `...` is a
+    MIME type.
+* ```enctype="multipart/form-data``` must be included in the form definition.
+* The uploaded file is given as a dictionary with its original file name in
+  `:filename` and a temp file in `:tempfile`. You can copy the file by the
+  path or use the data directly.
+* ```send_file``` sends back a (binary) file.

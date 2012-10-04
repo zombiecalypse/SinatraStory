@@ -1,0 +1,13 @@
+- content_for :title do
+  Signup
+%form( action="/signup" method="POST" )
+  %label
+    Username
+    %input(type="text" name="username")
+  %label
+    Password
+    %input(type="password" name="password")
+  %label
+    Password (again)
+    %input(type="password" name="password2")
+  %input(type="submit")

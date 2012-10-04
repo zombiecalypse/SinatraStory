@@ -1,0 +1,15 @@
+- content_for :title do
+  = text.title
+%h1= text.title
+%h2= text.user.name
+%div
+  :markdown
+    #{text.text}
+- if text.editable? user
+  %ul
+    %li
+      %a(href="/text/#{text.id}/edit") edit
+    %li
+      %form(action="/text/#{text.id}/" method="POST")
+        %input(name ="_method" type="hidden" value="delete")
+        %input(type="submit" value="delete")
